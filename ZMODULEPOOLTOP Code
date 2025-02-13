@@ -1,0 +1,69 @@
+*&---------------------------------------------------------------------*
+*& Include ZMODULEPOOLTOP                                    Module Pool      ZMODULEPOOL143
+*&
+*&---------------------------------------------------------------------*
+
+PROGRAM  ZMODULEPOOL143.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+
+*DATA : ZSTUDINFO-ID TYPE ZSTUDINFO-ID,
+*      ZSTUDINFO-NAME TYPE ZSTUDINFO-NAME.
+
+DATA : S1 TYPE ZSTUDINFO-ID,
+  S2 TYPE ZSTUDINFO-NAME,
+      S3 TYPE ZSTUDINFO-CLASS,
+      S4 TYPE ZSTUDINFO-EMAIL.
+
+DATA V_FLAG TYPE I.
+
+MODULE USER_COMMAND_0100 INPUT.
+
+  case sy-ucomm.
+    when 'BACK'.
+      LEAVE PROGRAM.
+    WHEN 'FC1'.
+      LEAVE PROGRAM.
+     WHEN 'FC2'.
+       select single name CLASS EMAIL
+         from zstudinfo
+         into (S2,S3,S4)
+         where ID = S1.
+
+         IF SY-SUBRC EQ 0.
+           V_FLAG = 1.
+           PERFORM VISIBLEFIELDS.
+           ENDIF.
+
+    ENDCASE.
+
+ENDMODULE.                 " USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE STATUS_0100 OUTPUT.
+IF V_FLAG EQ 0.
+  SET PF-STATUS 'DEEP'.
+
+  PERFORM INVISIBLEFIELDS.
+ELSEIF V_FLAG EQ 1.
+  PERFORM VISIBLEFIELDS.
+
+ENDIF.
+
+*PERFORM INVISIBLEFIELDS.
+
+ENDMODULE.                 " STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*&      Form  VISIBLEFIELDS
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
