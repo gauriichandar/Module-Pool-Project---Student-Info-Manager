@@ -1,69 +1,128 @@
 *&---------------------------------------------------------------------*
-*& Include ZMODULEPOOLTOP                                    Module Pool      ZMODULEPOOL143
+*& Include ZMPP_CRUDOPTOP                                    Module Pool      ZMPP_CRUDOP
 *&
 *&---------------------------------------------------------------------*
 
-PROGRAM  ZMODULEPOOL143.
-*&---------------------------------------------------------------------*
-*&      Module  USER_COMMAND_0100  INPUT
-*&---------------------------------------------------------------------*
-*       text
-*----------------------------------------------------------------------*
+PROGRAM  ZMPP_CRUDOP.
 
-*DATA : ZSTUDINFO-ID TYPE ZSTUDINFO-ID,
-*      ZSTUDINFO-NAME TYPE ZSTUDINFO-NAME.
+
+DATA :
+
+      GS_TABLE TYPE ZSTUDINFO,
+      GT_TABLE TYPE TABLE OF ZSTUDINFO.
 
 DATA : S1 TYPE ZSTUDINFO-ID,
-  S2 TYPE ZSTUDINFO-NAME,
+      S2 TYPE ZSTUDINFO-NAME,
       S3 TYPE ZSTUDINFO-CLASS,
       S4 TYPE ZSTUDINFO-EMAIL.
 
-DATA V_FLAG TYPE I.
 
-MODULE USER_COMMAND_0100 INPUT.
+MODULE USER_COMMAND_0301 INPUT.
+   CASE SY-UCOMM.
+      WHEN 'FC1'.
+          LEAVE PROGRAM.
+      WHEN 'FC2'. " CREATE
+         PERFORM CREATE_RECORD.
+      WHEN 'FC3'. " INSERT
+         PERFORM INSERT_RECORD.
+      WHEN 'FC4'. " UPDATE
+         PERFORM UPDATE_RECORD.
+      WHEN 'FC5'.
+        PERFORM DELETE_RECORD.
 
-  case sy-ucomm.
-    when 'BACK'.
-      LEAVE PROGRAM.
-    WHEN 'FC1'.
-      LEAVE PROGRAM.
-     WHEN 'FC2'.
-       select single name CLASS EMAIL
+
+  ENDCASE.
+
+
+ENDMODULE.                 " USER_COMMAND_0301  INPUT
+
+MODULE STATUS_0301 OUTPUT.
+*  SET PF-STATUS 'xxxxxxxx'.
+*  SET TITLEBAR 'xxx'.
+  SET PF-STATUS 'DEEP'.
+
+ENDMODULE.                 " STATUS_0301  OUTPUT
+
+MODULE GETDATA INPUT.
+
+case sy-ucomm.
+  when 'GET'.
+     IF S1 IS NOT INITIAL.
+
+       select single NAME CLASS EMAIL
          from zstudinfo
          into (S2,S3,S4)
          where ID = S1.
-
-         IF SY-SUBRC EQ 0.
-           V_FLAG = 1.
-           PERFORM VISIBLEFIELDS.
-           ENDIF.
-
-    ENDCASE.
-
-ENDMODULE.                 " USER_COMMAND_0100  INPUT
-*&---------------------------------------------------------------------*
-*&      Module  STATUS_0100  OUTPUT
-*&---------------------------------------------------------------------*
-*       text
-*----------------------------------------------------------------------*
-MODULE STATUS_0100 OUTPUT.
-IF V_FLAG EQ 0.
-  SET PF-STATUS 'DEEP'.
-
-  PERFORM INVISIBLEFIELDS.
-ELSEIF V_FLAG EQ 1.
-  PERFORM VISIBLEFIELDS.
-
 ENDIF.
+ENDCASE.
+ENDMODULE.                 " GETDATA  INPUT
 
-*PERFORM INVISIBLEFIELDS.
+FORM CREATE_RECORD .
+   CLEAR: S1, S2, S3, S4.
+  MESSAGE 'Enter new student details and press INSERT' TYPE 'I'.
 
-ENDMODULE.                 " STATUS_0100  OUTPUT
+ENDFORM.                    " CREATE_RECORD
+
+FORM INSERT_RECORD .
+
+  MOVE : S1 TO GS_TABLE-ID,
+        S2 TO GS_TABLE-NAME,
+        S3 TO GS_TABLE-CLASS,
+        S4 TO GS_TABLE-EMAIL.
+
+  MODIFY ZSTUDINFO FROM GS_TABLE.
+    IF SY-SUBRC EQ 0.
+      MESSAGE 'Record Inserted Successfully' TYPE 'I'.
+    ELSE.
+       MESSAGE 'Error in Insert' TYPE 'E'.
+     ENDIF.
+
+ENDFORM.                    " INSERT_RECORD
+
+FORM DELETE_RECORD .
+
+  IF S1 IS INITIAL.
+    MESSAGE 'Please enter a valid Student ID to delete' TYPE 'E'.
+    EXIT.
+  ENDIF.
+
+  DELETE FROM ZSTUDINFO WHERE ID = S1.
+
+  IF SY-SUBRC EQ 0.
+    MESSAGE 'Record Deleted Successfully' TYPE 'I'.
+    CLEAR: S1, S2, S3, S4.
+  ELSE.
+    MESSAGE 'Error in Deletion or Record Not Found' TYPE 'E'.
+  ENDIF.
+
+ENDFORM.                    " DELETE_RECORD
 *&---------------------------------------------------------------------*
-*&      Form  VISIBLEFIELDS
+*&      Form  UPDATE_RECORD
 *&---------------------------------------------------------------------*
 *       text
 *----------------------------------------------------------------------*
 *  -->  p1        text
 *  <--  p2        text
 *----------------------------------------------------------------------*
+FORM UPDATE_RECORD .
+
+  IF S1 IS INITIAL.
+    MESSAGE 'Please enter a valid Student ID to update' TYPE 'E'.
+    EXIT.
+  ENDIF.
+
+  " Update the student record based on ID
+  UPDATE ZSTUDINFO
+    SET NAME  = S2
+        CLASS = S3
+        EMAIL = S4
+    WHERE ID = S1.
+
+  " Check if the update was successful
+  IF SY-SUBRC EQ 0.
+    MESSAGE 'Record Updated Successfully' TYPE 'I'.
+  ELSE.
+    MESSAGE 'Error in Update or Record Not Found' TYPE 'E'.
+  ENDIF.
+
+ENDFORM.                    " UPDATE_RECORD
